@@ -1,0 +1,27 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker built -t catycherkesky/react-test -f ./client/Dockerfile.dev ./client
+  
+# Run tests
+script:
+  - docker run -e CI=true catycherkesky/react-test npm run test -- a
+
+# After tests pass, build docker containers
+after_sucess:
+  - docker build -t catycherkesky/multi-client ./client
+  - docker build -t catycherkesky/multi-nginx ./nginx
+  - docker build -t catycherkesky/multi-server ./server
+  - docker build -t catycherkesky/multi-worker ./worker
+
+  # log in to Docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take those images, and push them to docker
+  - docker push catycherkesky/multi-client
+  - docker push catycherkesky/multi-nginx
+  - docker push catycherkesky/multi-server
+  - docker push catycherkesky/multi-worker
+
